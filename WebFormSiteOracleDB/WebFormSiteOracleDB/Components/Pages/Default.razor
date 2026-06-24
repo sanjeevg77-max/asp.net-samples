@@ -1,0 +1,114 @@
+@namespace WebFormSiteOracleDB.Components.Pages.Default
+
+@page "/"
+@page "/Default"
+@rendermode InteractiveServer
+
+@using System.Data
+@using Oracle.ManagedDataAccess.Client
+@using Microsoft.Extensions.Logging
+
+@inject IConfiguration Configuration
+@inject ILogger<Default> Logger
+
+<main>
+    <div class="row">
+        @if (companyList == null)
+        {
+            <p><em>Loading...</em></p>
+        }
+        else if (companyList.Count == 0)
+        {
+            <p><em>No records found.</em></p>
+        }
+        else
+        {
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>COMPANY_NAME</th>
+                        <th>HQ_ADDRESS</th>
+                        <th>INCOME_OUTCOME</th>
+                        <th>NUMBER_OF_SALESMEN</th>
+                        <th>NUMBER_OF_FACTORIES</th>
+                        <th>NEW_DRUG_RATE</th>
+                        <th>1</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in companyList)
+                    {
+                        <tr>
+                            <td>@row.CompanyName</td>
+                            <td>@row.HqAddress</td>
+                            <td>@row.IncomeOutcome</td>
+                            <td>@row.NumberOfSalesmen</td>
+                            <td>@row.NumberOfFactories</td>
+                            <td>@row.NewDrugRate</td>
+                            <td>@row.CompanyName</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</main>
+
+@code {
+    private List<CompanyRecord> companyList;
+    private string _connectionString;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _connectionString = Configuration.GetConnectionString("OracleDB");
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        companyList = new List<CompanyRecord>();
+
+        try
+        {
+            using (var connection = new OracleConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                string query = @"SELECT COMPANY_NAME, HQ_ADDRESS, INCOME_OUTCOME, 
+                                        NUMBER_OF_SALESMEN, NUMBER_OF_FACTORIES, NEW_DRUG_RATE 
+                                 FROM HR";
+
+                using (var command = new OracleCommand(query, connection))
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        companyList.Add(new CompanyRecord
+                        {
+                            CompanyName      = reader["COMPANY_NAME"]?.ToString(),
+                            HqAddress        = reader["HQ_ADDRESS"]?.ToString(),
+                            IncomeOutcome    = reader["INCOME_OUTCOME"]?.ToString(),
+                            NumberOfSalesmen = reader["NUMBER_OF_SALESMEN"]?.ToString(),
+                            NumberOfFactories= reader["NUMBER_OF_FACTORIES"]?.ToString(),
+                            NewDrugRate      = reader["NEW_DRUG_RATE"]?.ToString()
+                        });
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading company data from Oracle database.");
+        }
+    }
+
+    public class CompanyRecord
+    {
+        public string CompanyName       { get; set; }
+        public string HqAddress         { get; set; }
+        public string IncomeOutcome     { get; set; }
+        public string NumberOfSalesmen  { get; set; }
+        public string NumberOfFactories { get; set; }
+        public string NewDrugRate       { get; set; }
+    }
+}

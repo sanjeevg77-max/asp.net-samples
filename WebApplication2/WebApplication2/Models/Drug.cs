@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 
 
 namespace WebApplication2.Models
@@ -20,6 +19,8 @@ namespace WebApplication2.Models
 
     public class DrugDBContext : DbContext
     {
+        public DrugDBContext(DbContextOptions<DrugDBContext> options) : base(options) { }
+
         public DbSet<Drug> Drugs { get; set; }
     }
 }

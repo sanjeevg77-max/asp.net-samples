@@ -1,18 +1,16 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.Entity;
 using System.Linq;
-using System.Net;
-using System.Web;
-using System.Web.Mvc;
 using MvcUnit.Models;
+using Microsoft.AspNetCore.Mvc;
+
 
 namespace MvcUnit.Controllers
 {
     public class ProductsController : Controller
     {
-        
+
         private readonly IProductRepository productRepository;
 
         public ProductsController() { }
@@ -21,7 +19,7 @@ namespace MvcUnit.Controllers
         {
             this.productRepository = productRepository;
         }
-        
+
         public ActionResult Index()
         {
             var data = productRepository.GetAll();
@@ -37,11 +35,11 @@ namespace MvcUnit.Controllers
         }
 
         // POST: Products/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
+        // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "Id,Name,Category,Price")] Product product)
+        public ActionResult Create([Bind("Id,Name,Category,Price")] Product product)
         {
             if (ModelState.IsValid)
             {
@@ -55,13 +53,13 @@ namespace MvcUnit.Controllers
         //--------------------------------------------------------//
         /*
         private readonly ProductDBContext db = new ProductDBContext();
-        
+
         // GET: Products
         public ActionResult Index()
         {
             return View(db.Products.ToList());
         }
-        
+
         // GET: Products/Details/5
         public ActionResult Details(int? id)
         {
@@ -77,7 +75,7 @@ namespace MvcUnit.Controllers
             return View(product);
         }
 
-        
+
 
         // GET: Products/Edit/5
         public ActionResult Edit(int? id)
@@ -95,7 +93,7 @@ namespace MvcUnit.Controllers
         }
 
         // POST: Products/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
+        // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]

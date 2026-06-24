@@ -1,23 +1,23 @@
-﻿namespace WebApp5Identity.Migrations
-{
-    using System;
-    using System.Data.Entity;
-    using System.Data.Entity.Migrations;
-    using System.Linq;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
+using WebApp5Identity.Models;
 
-    internal sealed class Configuration : DbMigrationsConfiguration<WebApp5Identity.Models.ApplicationDbContext>
+namespace WebApp5Identity.Migrations
+{
+    [DbContext(typeof(ApplicationDbContext))]
+    [Migration("InitialCreate")]
+    internal sealed class Configuration : Migration
     {
-        public Configuration()
+        protected override void Up(MigrationBuilder migrationBuilder)
         {
-            AutomaticMigrationsEnabled = false;
+            // Initial schema is created by EF Core scaffolded Identity migrations.
+            // Run: dotnet ef migrations add InitialCreate
+            //      dotnet ef database update
         }
 
-        protected override void Seed(WebApp5Identity.Models.ApplicationDbContext context)
+        protected override void Down(MigrationBuilder migrationBuilder)
         {
-            //  This method will be called after migrating to the latest version.
-
-            //  You can use the DbSet<T>.AddOrUpdate() helper extension method
-            //  to avoid creating duplicate seed data.
         }
     }
 }

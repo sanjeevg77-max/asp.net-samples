@@ -4,15 +4,16 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Web;
-using System.Web.Mvc;
 using static FileUploadwithModelandPreview.Models.UploadFile;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+
 
 namespace FileUploadwithModelandPreview.Controllers
 {
     public class FileController : Controller
     {
-        private readonly UploadFileDBContext db = new UploadFileDBContext("Name=FileUploadwithModelandPreview");
+        private readonly UploadFileDBContext db = new UploadFileDBContext("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=FileUploadwithModelandPreview;Integrated Security=True");
         
         // GET: File
         public ActionResult UploadForm()
@@ -50,21 +51,24 @@ namespace FileUploadwithModelandPreview.Controllers
             return RedirectToAction("UploadForm");
         }*/
         [HttpPost]
-        public ActionResult Upload(HttpPostedFileBase file1, HttpPostedFileBase file2)
+        public ActionResult Upload(IFormFile file1, IFormFile file2)
         {
             
-            if ((file1 != null && file1.ContentLength > 0) && (file2 != null && file2.ContentLength > 0))
+            if ((file1 != null && file1.Length > 0) && (file2 != null && file2.Length > 0))
             {
                 string _FileName1 = Path.GetFileName(file1.FileName);
-                string _path1 = Path.Combine(Server.MapPath("~/UploadedFiles"), _FileName1);
-                file1.SaveAs(_path1);
+                string _path1 = Path.Combine(Directory.GetCurrentDirectory(), "UploadedFiles", _FileName1);
+                using (var stream1 = new FileStream(_path1, FileMode.Create))
+                {
+                    file1.CopyTo(stream1);
+                }
 
                 // Save the file information to the database or session, if needed.
                 //Saving the data in the DB
                 byte[] fileContent1;
-                using (var binaryReader1 = new BinaryReader(file1.InputStream))
+                using (var binaryReader1 = new BinaryReader(file1.OpenReadStream()))
                 {
-                    fileContent1 = binaryReader1.ReadBytes(file1.ContentLength);
+                    fileContent1 = binaryReader1.ReadBytes((int)file1.Length);
                 }
                 var model1 = new UploadFile
                 {
@@ -76,15 +80,18 @@ namespace FileUploadwithModelandPreview.Controllers
                 db.UploadFiles.Add(model1);
                 db.SaveChanges();
                 string _FileName2 = Path.GetFileName(file2.FileName);
-                string _path2 = Path.Combine(Server.MapPath("~/UploadedFiles"), _FileName2);
-                file2.SaveAs(_path2);
+                string _path2 = Path.Combine(Directory.GetCurrentDirectory(), "UploadedFiles", _FileName2);
+                using (var stream2 = new FileStream(_path2, FileMode.Create))
+                {
+                    file2.CopyTo(stream2);
+                }
 
                 // Save the file information to the database or session, if needed.
                 //Saving the data in the DB
                 byte[] fileContent2;
-                using (var binaryReader2 = new BinaryReader(file2.InputStream))
+                using (var binaryReader2 = new BinaryReader(file2.OpenReadStream()))
                 {
-                    fileContent2 = binaryReader2.ReadBytes(file2.ContentLength);
+                    fileContent2 = binaryReader2.ReadBytes((int)file2.Length);
                 }
                 var model2 = new UploadFile
                 {
@@ -114,12 +121,12 @@ namespace FileUploadwithModelandPreview.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             UploadFile UploadedFile = db.UploadFiles.Find(id);
             if (UploadedFile == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             db.UploadFiles.Remove(UploadedFile);
             db.SaveChanges();

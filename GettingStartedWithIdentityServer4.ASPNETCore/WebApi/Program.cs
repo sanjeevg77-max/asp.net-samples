@@ -7,9 +7,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddAuthentication("Bearer")
-    .AddIdentityServerAuthentication("Bearer", options =>
+    .AddJwtBearer("Bearer", options =>
     {
-        options.ApiName = "myApi";
+        options.Audience = "myApi";
         options.Authority = "http://192.168.2.3:7232";
         options.RequireHttpsMetadata = false;
     });

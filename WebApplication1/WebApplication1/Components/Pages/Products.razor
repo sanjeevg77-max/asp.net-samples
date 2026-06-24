@@ -1,0 +1,101 @@
+@namespace WebApplication1.Components.Pages.Products
+
+@page "/Products"
+@rendermode InteractiveServer
+@using Microsoft.Extensions.Logging
+@using System.Data
+@using System.Data.SqlClient
+
+@inject ILogger<Products> Logger
+@inject IConfiguration Configuration
+
+<main>
+    <section class="row" aria-labelledby="aspnetTitle">
+        <h1 id="aspnetTitle">Products Page</h1>
+    </section>
+
+    <div class="row">
+        <section class="col-md-4" aria-labelledby="gettingStartedTitle">
+            <h2 id="Products">Product 1</h2>
+            <p>
+                My product list
+
+                @if (productTable != null && productTable.Rows.Count > 0)
+                {
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                @foreach (DataColumn col in productTable.Columns)
+                                {
+                                    <th>@col.ColumnName</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (DataRow row in productTable.Rows)
+                            {
+                                <tr class="@(selectedRowIndex == productTable.Rows.IndexOf(row) ? "table-active" : "")"
+                                    @onclick="() => Unnamed3_SelectedIndexChanged(productTable.Rows.IndexOf(row))">
+                                    @foreach (DataColumn col in productTable.Columns)
+                                    {
+                                        <td>@row[col]</td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p>No products available.</p>
+                }
+
+                <br />
+                <br />
+            </p>
+            <p>
+                <NavLink class="btn btn-default" href="">Learn more &raquo;</NavLink>
+            </p>
+        </section>
+    </div>
+</main>
+
+@code {
+    private DataTable? productTable;
+    private int selectedRowIndex = -1;
+    private string _connectionString = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _connectionString = Configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
+        await LoadProductsAsync();
+    }
+
+    private async Task LoadProductsAsync()
+    {
+        try
+        {
+            productTable = new DataTable();
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                using (var command = new SqlCommand("SELECT * FROM Products", connection))
+                {
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        productTable.Load(reader);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading products.");
+        }
+    }
+
+    private void Unnamed3_SelectedIndexChanged(int rowIndex)
+    {
+        selectedRowIndex = rowIndex;
+    }
+}

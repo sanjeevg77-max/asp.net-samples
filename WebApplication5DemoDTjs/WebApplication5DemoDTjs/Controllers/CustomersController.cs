@@ -4,15 +4,21 @@ using System.Data;
 using System.Data.Entity;
 using System.Linq;
 using System.Net;
-using System.Web;
-using System.Web.Mvc;
 using WebApplication5DemoDTjs.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+
 
 namespace WebApplication5DemoDTjs.Controllers
 {
     public class CustomersController : Controller
     {
-        private readonly CustomersDBContext db = new CustomersDBContext("Name=test (webApplication5DemoDTjs)");
+        private readonly CustomersDBContext db;
+
+        public CustomersController(IConfiguration configuration)
+        {
+            db = new CustomersDBContext(configuration.GetConnectionString("test (webApplication5DemoDTjs)"));
+        }
 
         // GET: Customers
         public ActionResult Index()
@@ -25,12 +31,12 @@ namespace WebApplication5DemoDTjs.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             Customers customers = db.Customerss.Find(id);
             if (customers == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(customers);
         }
@@ -46,7 +52,7 @@ namespace WebApplication5DemoDTjs.Controllers
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "CustomerID,CompanyName,ContactName,ContactTitle,Address,City,Region,PostalCode,Country,Phone,Fax")] Customers customers)
+        public ActionResult Create([Bind("CustomerID,CompanyName,ContactName,ContactTitle,Address,City,Region,PostalCode,Country,Phone,Fax")] Customers customers)
         {
             if (ModelState.IsValid)
             {
@@ -63,12 +69,12 @@ namespace WebApplication5DemoDTjs.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             Customers customers = db.Customerss.Find(id);
             if (customers == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(customers);
         }
@@ -78,7 +84,7 @@ namespace WebApplication5DemoDTjs.Controllers
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit([Bind(Include = "CustomerID,CompanyName,ContactName,ContactTitle,Address,City,Region,PostalCode,Country,Phone,Fax")] Customers customers)
+        public ActionResult Edit([Bind("CustomerID,CompanyName,ContactName,ContactTitle,Address,City,Region,PostalCode,Country,Phone,Fax")] Customers customers)
         {
             if (ModelState.IsValid)
             {
@@ -94,12 +100,12 @@ namespace WebApplication5DemoDTjs.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             Customers customers = db.Customerss.Find(id);
             if (customers == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(customers);
         }

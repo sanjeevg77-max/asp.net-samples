@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Web;
 using System.Data;
 using System.Data.Entity;
 
@@ -56,7 +55,8 @@ namespace WebApplication5DemoDTjs.Models
     }
     public class CustomersDBContext : DbContext
     {
-        public CustomersDBContext(string nameOrConnectionString) : base(nameOrConnectionString) { }
+        // Accepts a raw ADO.NET connection string sourced from IConfiguration / appsettings.json
+        public CustomersDBContext(string connectionString) : base(connectionString) { }
         public DbSet<Customers> Customerss { get; set; }
     }
 }

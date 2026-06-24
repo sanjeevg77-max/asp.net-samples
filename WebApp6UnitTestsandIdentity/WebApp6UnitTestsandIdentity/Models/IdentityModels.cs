@@ -1,8 +1,9 @@
-﻿using System.Data.Entity;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNet.Identity;
-using Microsoft.AspNet.Identity.EntityFramework;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+
 
 namespace WebApp6UnitTestsandIdentity.Models
 {
@@ -12,22 +13,24 @@ namespace WebApp6UnitTestsandIdentity.Models
         public async Task<ClaimsIdentity> GenerateUserIdentityAsync(UserManager<ApplicationUser> manager)
         {
             // Note the authenticationType must match the one defined in CookieAuthenticationOptions.AuthenticationType
-            var userIdentity = await manager.CreateIdentityAsync(this, DefaultAuthenticationTypes.ApplicationCookie);
+            var claimsIdentity = new ClaimsIdentity("ApplicationCookie");
+            var claims = await manager.GetClaimsAsync(this);
+            claimsIdentity.AddClaims(claims);
             // Add custom user claims here
-            return userIdentity;
+            return claimsIdentity;
         }
     }
 
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
-        public ApplicationDbContext()
-            : base("DefaultConnection", throwIfV1Schema: false)
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+            : base(options)
         {
         }
 
         public static ApplicationDbContext Create()
         {
-            return new ApplicationDbContext();
+            return new ApplicationDbContext(new DbContextOptions<ApplicationDbContext>());
         }
     }
 }

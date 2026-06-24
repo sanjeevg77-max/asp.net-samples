@@ -1,11 +1,13 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@ViewBag.Title - My ASP.NET Application</title>
-    @Styles.Render("~/Content/css")
-    @Scripts.Render("~/bundles/modernizr")
+    <!-- TODO: Verify and update stylesheet path -->
+    <link href="~/Content/css" rel="stylesheet" />
+    <!-- TODO: Verify and update script path -->
+    <script src="~/bundles/modernizr"></script>
 </head>
 <body>
     <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-dark">
@@ -32,8 +34,10 @@
         </footer>
     </div>
 
-    @Scripts.Render("~/bundles/jquery")
-    @Scripts.Render("~/bundles/bootstrap")
+    <!-- TODO: Verify and update script path -->
+    <script src="~/bundles/jquery"></script>
+    <!-- TODO: Verify and update script path -->
+    <script src="~/bundles/bootstrap"></script>
     @RenderSection("scripts", required: false)
 </body>
 </html>

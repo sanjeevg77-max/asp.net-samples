@@ -1,6 +1,6 @@
-﻿using WeatherForecast.Web.Models;
-using WeatherForecast.Web.Helpers;
+using WeatherForecast.Web.Api.Models;
 using WeatherForecast.Web.Services.Interfaces;
+using System.Net.Http.Json;
 
 namespace WeatherForecast.Web.Services
 {
@@ -18,7 +18,7 @@ namespace WeatherForecast.Web.Services
         {
             var response = await _client.GetAsync(BasePath);
 
-            return await response.ReadContentAsync<List<WeatherForecastModel>>();
+            return await response.Content.ReadFromJsonAsync<List<WeatherForecastModel>>() ?? new List<WeatherForecastModel>();
         }
     }
 }

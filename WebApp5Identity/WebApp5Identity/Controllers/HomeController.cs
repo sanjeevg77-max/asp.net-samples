@@ -1,11 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Security.Claims;
 using System.Security.Policy;
 using System.Web;
-using System.Web.Mvc;
+using Microsoft.AspNetCore.Mvc;
+
 
 namespace WebApp5Identity.Controllers
 {
@@ -58,4 +59,3 @@ namespace WebApp5Identity.Controllers
         }
     }
 }
-

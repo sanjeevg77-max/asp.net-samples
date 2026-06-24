@@ -1,20 +1,16 @@
-﻿using IdentityModel.Client;
-using Microsoft.AspNetCore.DataProtection;
+﻿using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System;
 using System.Diagnostics;
-using System.Reflection.PortableExecutable;
-using System.Runtime.Intrinsics.X86;
-using WebClient.Models;
-using WebClient.Services;
-using static System.Net.WebRequestMethods;
-using System;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using WebClient.Models;
+using WebClient.Services;
 
 
 namespace WebClient.Controllers
@@ -64,7 +60,7 @@ namespace WebClient.Controllers
             var token = await _tokenService.GetToken("myApi.read");
             using (var client = new HttpClient())
             {
-                client.SetBearerToken(token.AccessToken);
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
                 var result = await client.GetAsync("http://192.168.2.3:7201/weatherforecast");
                 if (result.IsSuccessStatusCode)
                 {

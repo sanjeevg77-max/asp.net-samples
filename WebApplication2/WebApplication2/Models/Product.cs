@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web;
 using System.ComponentModel.DataAnnotations;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 
 namespace WebApplication2.Models
 {
@@ -43,6 +42,8 @@ namespace WebApplication2.Models
     */
     public class ProductDBCintext : DbContext
     {
-        public DbSet<Product> Products { get; set;}
+        public ProductDBCintext(DbContextOptions<ProductDBCintext> options) : base(options) { }
+
+        public DbSet<Product> Products { get; set; }
     }
 }

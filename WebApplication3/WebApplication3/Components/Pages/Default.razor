@@ -1,0 +1,118 @@
+@namespace WebApplication3.Components.Pages
+
+@page "/"
+@page "/Default"
+@rendermode InteractiveServer
+
+@using Microsoft.Data.SqlClient
+@using System.Data
+@using SqlCommand = Microsoft.Data.SqlClient.SqlCommand
+
+
+@inject IConfiguration Configuration
+@inject ILogger<Default> Logger
+
+<PageTitle>Home Page</PageTitle>
+
+<main>
+    <section class="row" aria-labelledby="aspnetTitle">
+        <h1 id="aspnetTitle">Title - Header
+        </h1>
+    </section>
+
+    <div>
+        @if (companies == null)
+        {
+            <p><em>Loading...</em></p>
+        }
+        else if (companies.Count == 0)
+        {
+            <p><em>No records found.</em></p>
+        }
+        else
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>COMPANY_NAME</th>
+                        <th>HQ_ADDRESS</th>
+                        <th>INCOME_OUTCOME</th>
+                        <th>NUMBER_OF_SALESMEN</th>
+                        <th>NUMBER_OF_FACTORIES</th>
+                        <th>NEW_DRUG_RATE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in companies)
+                    {
+                        <tr>
+                            <td>@row.CompanyName</td>
+                            <td>@row.HqAddress</td>
+                            <td>@row.IncomeOutcome</td>
+                            <td>@row.NumberOfSalesmen</td>
+                            <td>@row.NumberOfFactories</td>
+                            <td>@row.NewDrugRate</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</main>
+
+@code {
+    private List<CompanyModel> companies;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCompaniesAsync();
+    }
+
+    private async Task LoadCompaniesAsync()
+    {
+        try
+        {
+            var connectionString = Configuration.GetConnectionString("ConnectionString1");
+            companies = new List<CompanyModel>();
+
+using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var selectCommand = @"SELECT * FROM ""user_test"".COMPANY";
+using (var command = new SqlCommand(selectCommand, connection))
+                {
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            companies.Add(new CompanyModel
+                            {
+                                CompanyName = reader["COMPANY_NAME"]?.ToString(),
+                                HqAddress = reader["HQ_ADDRESS"]?.ToString(),
+                                IncomeOutcome = reader["INCOME_OUTCOME"]?.ToString(),
+                                NumberOfSalesmen = reader["NUMBER_OF_SALESMEN"]?.ToString(),
+                                NumberOfFactories = reader["NUMBER_OF_FACTORIES"]?.ToString(),
+                                NewDrugRate = reader["NEW_DRUG_RATE"]?.ToString()
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading company data.");
+            companies = new List<CompanyModel>();
+        }
+    }
+
+    private class CompanyModel
+    {
+        public string CompanyName { get; set; }
+        public string HqAddress { get; set; }
+        public string IncomeOutcome { get; set; }
+        public string NumberOfSalesmen { get; set; }
+        public string NumberOfFactories { get; set; }
+        public string NewDrugRate { get; set; }
+    }
+}

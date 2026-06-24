@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace WebApp5Identity.Models
 {
@@ -8,31 +9,32 @@ namespace WebApp5Identity.Models
     {
         [Required]
         [Display(Name = "Email")]
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
     }
 
     public class ExternalLoginListViewModel
     {
-        public string ReturnUrl { get; set; }
+        public string? ReturnUrl { get; set; }
     }
 
     public class SendCodeViewModel
     {
-        public string SelectedProvider { get; set; }
-        public ICollection<System.Web.Mvc.SelectListItem> Providers { get; set; }
-        public string ReturnUrl { get; set; }
+        public string? SelectedProvider { get; set; }
+        public ICollection<SelectListItem> Providers { get; set; } = new List<SelectListItem>();
+        public string? ReturnUrl { get; set; }
         public bool RememberMe { get; set; }
     }
 
     public class VerifyCodeViewModel
     {
         [Required]
-        public string Provider { get; set; }
+        public string Provider { get; set; } = string.Empty;
 
         [Required]
         [Display(Name = "Code")]
-        public string Code { get; set; }
-        public string ReturnUrl { get; set; }
+        public string Code { get; set; } = string.Empty;
+
+        public string? ReturnUrl { get; set; }
 
         [Display(Name = "Remember this browser?")]
         public bool RememberBrowser { get; set; }
@@ -44,7 +46,7 @@ namespace WebApp5Identity.Models
     {
         [Required]
         [Display(Name = "Email")]
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
     }
 
     public class LoginViewModel
@@ -52,12 +54,12 @@ namespace WebApp5Identity.Models
         [Required]
         [Display(Name = "Email")]
         [EmailAddress]
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
 
         [Required]
         [DataType(DataType.Password)]
         [Display(Name = "Password")]
-        public string Password { get; set; }
+        public string Password { get; set; } = string.Empty;
 
         [Display(Name = "Remember me?")]
         public bool RememberMe { get; set; }
@@ -68,18 +70,18 @@ namespace WebApp5Identity.Models
         [Required]
         [EmailAddress]
         [Display(Name = "Email")]
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
 
         [Required]
         [StringLength(100, ErrorMessage = "The {0} must be at least {2} characters long.", MinimumLength = 6)]
         [DataType(DataType.Password)]
         [Display(Name = "Password")]
-        public string Password { get; set; }
+        public string Password { get; set; } = string.Empty;
 
         [DataType(DataType.Password)]
         [Display(Name = "Confirm password")]
         [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
-        public string ConfirmPassword { get; set; }
+        public string? ConfirmPassword { get; set; }
 
         [Required]
         [Display(Name = "Date of Birth")]
@@ -92,20 +94,20 @@ namespace WebApp5Identity.Models
         [Required]
         [EmailAddress]
         [Display(Name = "Email")]
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
 
         [Required]
         [StringLength(100, ErrorMessage = "The {0} must be at least {2} characters long.", MinimumLength = 6)]
         [DataType(DataType.Password)]
         [Display(Name = "Password")]
-        public string Password { get; set; }
+        public string Password { get; set; } = string.Empty;
 
         [DataType(DataType.Password)]
         [Display(Name = "Confirm password")]
         [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
-        public string ConfirmPassword { get; set; }
+        public string? ConfirmPassword { get; set; }
 
-        public string Code { get; set; }
+        public string? Code { get; set; }
     }
 
     public class ForgotPasswordViewModel
@@ -113,6 +115,6 @@ namespace WebApp5Identity.Models
         [Required]
         [EmailAddress]
         [Display(Name = "Email")]
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
     }
 }

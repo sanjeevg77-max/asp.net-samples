@@ -1,0 +1,72 @@
+@namespace WebApplication3.Components.ViewSwitcher
+
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Http
+@using Microsoft.Extensions.Logging
+@inject IHttpContextAccessor HttpContextAccessor
+@inject NavigationManager NavigationManager
+@inject ILogger<ViewSwitcher> Logger
+
+@rendermode InteractiveServer
+
+@if (isVisible)
+{
+    <div id="viewSwitcher">
+        @CurrentView view | <NavLink href="@SwitchUrl" data-ajax="false">Switch to @AlternateView</NavLink>
+    </div>
+}
+
+@code {
+    private string CurrentView { get; set; } = string.Empty;
+    private string AlternateView { get; set; } = string.Empty;
+    private string SwitchUrl { get; set; } = string.Empty;
+    private bool isVisible = true;
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            var httpContext = HttpContextAccessor.HttpContext;
+            if (httpContext == null)
+            {
+                Logger.LogWarning("HttpContext is not available.");
+                isVisible = false;
+                return;
+            }
+
+            var userAgent = httpContext.Request.Headers["User-Agent"].ToString();
+            var isMobile = IsMobileUserAgent(userAgent);
+
+            CurrentView = isMobile ? "Mobile" : "Desktop";
+            AlternateView = isMobile ? "Desktop" : "Mobile";
+
+            var returnUrl = Uri.EscapeDataString(NavigationManager.ToBaseRelativePath(NavigationManager.Uri));
+            SwitchUrl = $"/__FriendlyUrls_SwitchView/{AlternateView}?__FriendlyUrls_SwitchViews=true&ReturnUrl=/{returnUrl}";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error occurred while initializing ViewSwitcher.");
+            isVisible = false;
+        }
+    }
+
+    private bool IsMobileUserAgent(string userAgent)
+    {
+        if (string.IsNullOrEmpty(userAgent))
+            return false;
+
+        var mobileKeywords = new[]
+        {
+            "Mobile", "Android", "iPhone", "iPad", "Windows Phone",
+            "BlackBerry", "Opera Mini", "IEMobile"
+        };
+
+        foreach (var keyword in mobileKeywords)
+        {
+            if (userAgent.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+        }
+
+        return false;
+    }
+}

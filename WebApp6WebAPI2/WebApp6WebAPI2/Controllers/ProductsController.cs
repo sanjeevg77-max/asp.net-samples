@@ -1,13 +1,15 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Web.Http;
+using Microsoft.AspNetCore.Mvc;
 using WebApp6WebAPI2.Models;
 
 namespace WebApp6WebAPI2.Controllers
 {
-    public class ProductsController : ApiController
+    [ApiController]
+    [Route("api/[controller]")]
+    public class ProductsController : ControllerBase
     {
         /// <summary>
         /// Create new products
@@ -24,7 +26,7 @@ namespace WebApp6WebAPI2.Controllers
             return products;
         }
 
-        public IHttpActionResult GetProduct(int id)
+        public IActionResult GetProduct(int id)
         {
             var product = products.FirstOrDefault((p) => p.Id == id);
             if (product == null)

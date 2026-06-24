@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
-using System.Web;
 
 namespace MvcUnit.Models
 {
@@ -15,11 +14,11 @@ namespace MvcUnit.Models
         public string Category { get; set; }
         public decimal Price { get; set; }
     }
-    
+
     public class ProductDBContext : DbContext
     {
-//        public ProductDBContext(string nameOrConnectionString) : base(nameOrConnectionString) { }
-        public DbSet<Product> Products { get; set; }
+        public ProductDBContext(DbContextOptions<ProductDBContext> options) : base(options) { }
 
+        public DbSet<Product> Products { get; set; }
     }
 }

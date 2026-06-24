@@ -1,15 +1,15 @@
 ﻿using IronOcr;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using OCRwithTesseract.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Web;
-using System.Web.Mvc;
 using System.Xml;
 using static OCRwithTesseract.Models.UploadFile;
-using static System.Net.WebRequestMethods;
+
 
 namespace OCRwithTesseract.Controllers
 {
@@ -25,13 +25,16 @@ namespace OCRwithTesseract.Controllers
 
         //one file upload :
         [HttpPost]
-        public ActionResult Upload(HttpPostedFileBase file)
+        public ActionResult Upload(IFormFile file)
         {
-            if (file != null && file.ContentLength > 0)
+            if (file != null && file.Length > 0)
             {
                 string _FileName = Path.GetFileName(file.FileName);
-                string _path = Path.Combine(Server.MapPath("~/UploadedFiles"), _FileName);
-                file.SaveAs(_path);
+                string _path = Path.Combine(Directory.GetCurrentDirectory(), "UploadedFiles", _FileName);
+                using (var stream = new FileStream(_path, FileMode.Create))
+                {
+                    file.CopyTo(stream);
+                }
                 //
                 var Ocr = new IronTesseract(); // nothing to configure
                 Ocr.Language = OcrLanguage.English; // one language
@@ -50,9 +53,10 @@ namespace OCRwithTesseract.Controllers
                 // Save the file information to the database or session, if needed.
                 //Saving the data in the DB
                 byte[] fileContent;
-                using (var binaryReader = new BinaryReader(file.InputStream))
+                using (var memoryStream = new MemoryStream())
                 {
-                    fileContent = binaryReader.ReadBytes(file.ContentLength);
+                    file.OpenReadStream().CopyTo(memoryStream);
+                    fileContent = memoryStream.ToArray();
                 }
                 var model = new UploadFile
                 {
@@ -65,7 +69,7 @@ namespace OCRwithTesseract.Controllers
                 // Save the uploadedFile object to the database using your DbContext
                 db.UploadFiles.Add(model);
                 db.SaveChanges();
-                
+
                 return RedirectToAction("Index");
             }
             ViewBag.Message = "File upload failed!!";
@@ -79,12 +83,12 @@ namespace OCRwithTesseract.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return StatusCode((int)HttpStatusCode.BadRequest);
             }
             UploadFile UploadedFile = db.UploadFiles.Find(id);
             if (UploadedFile == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             db.UploadFiles.Remove(UploadedFile);
             db.SaveChanges();

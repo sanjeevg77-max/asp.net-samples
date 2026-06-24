@@ -1,18 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.Entity;
 using System.Linq;
-using System.Net;
-using System.Web;
-using System.Web.Mvc;
+using Microsoft.EntityFrameworkCore;
 using WebApplication2.Models;
+using Microsoft.AspNetCore.Mvc;
+
 
 namespace WebApplication2.Controllers
 {
     public class DrugsController : Controller
     {
-        private DrugDBContext db = new DrugDBContext();
+        private readonly DrugDBContext db;
+
+        public DrugsController(DrugDBContext context)
+        {
+            db = context;
+        }
 
         // GET: Drugs
         public ActionResult Index()
@@ -25,12 +28,12 @@ namespace WebApplication2.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             Drug drug = db.Drugs.Find(id);
             if (drug == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(drug);
         }
@@ -46,7 +49,7 @@ namespace WebApplication2.Controllers
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "ID,Name,CompanyName,SerialCode,Price,Type,Approval")] Drug drug)
+        public ActionResult Create([Bind("ID,Name,CompanyName,SerialCode,Price,Type,Approval")] Drug drug)
         {
             if (ModelState.IsValid)
             {
@@ -63,12 +66,12 @@ namespace WebApplication2.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             Drug drug = db.Drugs.Find(id);
             if (drug == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(drug);
         }
@@ -78,7 +81,7 @@ namespace WebApplication2.Controllers
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit([Bind(Include = "ID,Name,CompanyName,SerialCode,Price,Type,Approval")] Drug drug)
+        public ActionResult Edit([Bind("ID,Name,CompanyName,SerialCode,Price,Type,Approval")] Drug drug)
         {
             if (ModelState.IsValid)
             {
@@ -94,12 +97,12 @@ namespace WebApplication2.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             Drug drug = db.Drugs.Find(id);
             if (drug == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(drug);
         }
