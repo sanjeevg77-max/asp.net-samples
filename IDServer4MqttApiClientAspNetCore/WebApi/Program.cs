@@ -1,9 +1,12 @@
-
-// Go To : https://localhost:7201/weatherforecast
-
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.IdentityModel.Tokens;
 using MQTTnet.AspNetCore;
 using MQTTnet.AspNetCore.AttributeRouting;
-using MQTTnet.AspNetCore.Extensions;
+using MQTTnet.Server;
+
+
+// Go To : https://localhost:7201/weatherforecast
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,33 +22,30 @@ builder.Services.AddMqttControllers(
     */
     );
 
-builder.Services
-    .AddHostedMqttServerWithServices(s =>
-        {
-            // Optionally set server options here
-            s.WithoutDefaultEndpoint();
+builder.Services.AddSingleton<MqttHostedServer>();
+builder.Services.AddSingleton<IMqttServerOptions>(new MqttServerOptionsBuilder().WithDefaultEndpoint().Build());
+builder.Services.AddHostedService(sp => sp.GetRequiredService<MqttHostedServer>());
+builder.Services.AddConnections();
 
-            // Enable Attribute routing
-            s.WithAttributeRouting(
-                /* 
-                    By default, messages published to topics that don't
-                    match any routes are rejected. Change this to true
-                    to allow those messages to be routed without hitting
-                    any controller actions.
-                */
-                allowUnmatchedRoutes: false
-            );
-        })
-    .AddMqttConnectionHandler()
-    .AddConnections();
-
-
-builder.Services.AddAuthentication("Bearer")
-    .AddIdentityServerAuthentication("Bearer", options =>
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.ListenAnyIP(7201, listenOptions => listenOptions.UseHttps());
+    serverOptions.ListenAnyIP(1883, listenOptions =>
     {
-        options.ApiName = "myApi";
+        listenOptions.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.None;
+    });
+});
+
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
         options.Authority = "http://192.168.2.3:7232";
         options.RequireHttpsMetadata = false;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateAudience = false
+        };
     });
 
 var app = builder.Build();
@@ -60,13 +60,8 @@ app.UseAuthentication();
 
 app.UseAuthorization();
 
-app.UseEndpoints(endpoints =>
-{
-    endpoints.MapControllers();
-
-    // Root endpoint for MQTT - attribute routing picks up after this URL
-    endpoints.MapMqtt("/mqtt");
-});
+// Root endpoint for MQTT - attribute routing picks up after this URL
+app.MapMqtt("/mqtt");
 
 app.MapControllers();
 

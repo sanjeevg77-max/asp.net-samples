@@ -1,4 +1,4 @@
-﻿using IronOcr;
+using IronOcr;
 using OCRwithTesseract.Models;
 using System;
 using System.Collections.Generic;
@@ -6,16 +6,25 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Web;
-using System.Web.Mvc;
 using System.Xml;
 using static OCRwithTesseract.Models.UploadFile;
 using static System.Net.WebRequestMethods;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Hosting;
+
 
 namespace OCRwithTesseract.Controllers
 {
     public class FileController : Controller
     {
         private readonly UploadFileDBContext db = new UploadFileDBContext("Name=OCRwithTesseract");
+        private readonly IWebHostEnvironment _env;
+
+        public FileController(IWebHostEnvironment env)
+        {
+            _env = env;
+        }
 
         // GET: File
         public ActionResult Index()
@@ -25,21 +34,28 @@ namespace OCRwithTesseract.Controllers
 
         //one file upload :
         [HttpPost]
-        public ActionResult Upload(HttpPostedFileBase file)
+        public ActionResult Upload(IFormFile file)
         {
-            if (file != null && file.ContentLength > 0)
+            if (file != null && file.Length > 0)
             {
                 string _FileName = Path.GetFileName(file.FileName);
-                string _path = Path.Combine(Server.MapPath("~/UploadedFiles"), _FileName);
-                file.SaveAs(_path);
+                string uploadFolder = Path.Combine(_env.ContentRootPath, "UploadedFiles");
+                if (!Directory.Exists(uploadFolder))
+                {
+                    Directory.CreateDirectory(uploadFolder);
+                }
+                string _path = Path.Combine(uploadFolder, _FileName);
+using (var stream = new FileStream(_path, FileMode.Create))
+                {
+                    file.CopyTo(stream);
+                }
                 //
                 var Ocr = new IronTesseract(); // nothing to configure
                 Ocr.Language = OcrLanguage.English; // one language
                 // Add as many secondary languages as you like : (dont forget to add the NuGet Package)
                 Ocr.AddSecondaryLanguage(OcrLanguage.Greek);
-                Ocr.Configuration.TesseractVersion = TesseractVersion.Tesseract5;
                 string ExtractedText;
-                using (var Input = new OcrInput())
+using (var Input = new OcrInput())
                 {
                     Input.AddImage(_path);
                     Input.DeNoise();
@@ -50,9 +66,10 @@ namespace OCRwithTesseract.Controllers
                 // Save the file information to the database or session, if needed.
                 //Saving the data in the DB
                 byte[] fileContent;
-                using (var binaryReader = new BinaryReader(file.InputStream))
+using (var memoryStream = new MemoryStream())
                 {
-                    fileContent = binaryReader.ReadBytes(file.ContentLength);
+                    file.CopyTo(memoryStream);
+                    fileContent = memoryStream.ToArray();
                 }
                 var model = new UploadFile
                 {
@@ -62,10 +79,10 @@ namespace OCRwithTesseract.Controllers
                     FilePath = _path,
                     ExtractedText = ExtractedText
                 };
-                // Save the uploadedFile object to the database using your DbContext
+// Save the uploadedFile object to the database using your DbContext
                 db.UploadFiles.Add(model);
                 db.SaveChanges();
-                
+
                 return RedirectToAction("Index");
             }
             ViewBag.Message = "File upload failed!!";
@@ -79,12 +96,12 @@ namespace OCRwithTesseract.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return StatusCode((int)HttpStatusCode.BadRequest);
             }
             UploadFile UploadedFile = db.UploadFiles.Find(id);
             if (UploadedFile == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             db.UploadFiles.Remove(UploadedFile);
             db.SaveChanges();

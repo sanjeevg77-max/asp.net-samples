@@ -1,11 +1,12 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Web.Mvc;
 using WebApp6UnitTestsandIdentity;
 using WebApp6UnitTestsandIdentity.Controllers;
+using Microsoft.AspNetCore.Mvc;
+
 
 namespace WebApp6UnitTestsandIdentity.Tests.Controllers
 {
@@ -35,7 +36,7 @@ namespace WebApp6UnitTestsandIdentity.Tests.Controllers
             ViewResult result = controller.About() as ViewResult;
 
             // Assert
-            Assert.AreEqual("Your application description page.", result.ViewBag.Message);
+            Assert.AreEqual("Your application description page.", result.ViewData["Message"]);
         }
 
         [TestMethod]

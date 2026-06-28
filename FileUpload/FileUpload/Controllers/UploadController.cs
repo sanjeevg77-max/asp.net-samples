@@ -1,13 +1,23 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Web;
-using System.Web.Mvc;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+
 namespace FileUpload.Controllers
 {
     public class UploadController : Controller
     {
+        private readonly IWebHostEnvironment _webHostEnvironment;
+
+        public UploadController(IWebHostEnvironment webHostEnvironment)
+        {
+            _webHostEnvironment = webHostEnvironment;
+        }
+
         // GET: Upload
         public ActionResult Index()
         {
@@ -19,15 +29,23 @@ namespace FileUpload.Controllers
             return View();
         }
         [HttpPost]
-        public ActionResult UploadFile(HttpPostedFileBase file)
+        public ActionResult UploadFile(IFormFile file)
         {
             try
             {
-                if (file.ContentLength > 0)
+                if (file != null && file.Length > 0)
                 {
                     string _FileName = Path.GetFileName(file.FileName);
-                    string _path = Path.Combine(Server.MapPath("~/UploadedFiles"), _FileName);
-                    file.SaveAs(_path);
+                    string uploadFolder = Path.Combine(_webHostEnvironment.ContentRootPath, "UploadedFiles");
+                    if (!Directory.Exists(uploadFolder))
+                    {
+                        Directory.CreateDirectory(uploadFolder);
+                    }
+                    string _path = Path.Combine(uploadFolder, _FileName);
+using (var stream = new FileStream(_path, FileMode.Create))
+                    {
+                        file.CopyTo(stream);
+                    }
                 }
                 ViewBag.Message = "File Uploaded Successfully!!";
                 return View();

@@ -1,0 +1,109 @@
+@namespace WebApplication1.Components.Pages.Products
+
+@page "/Products"
+@rendermode InteractiveServer
+@using Microsoft.Extensions.Logging
+@using System.Data
+@using Microsoft.Data.SqlClient
+
+@inject ILogger<Products> Logger
+
+<main>
+    <section class="row" aria-labelledby="aspnetTitle">
+        <h1 id="aspnetTitle">Products Page</h1>
+    </section>
+
+    <div class="row">
+        <section class="col-md-4" aria-labelledby="gettingStartedTitle">
+            <h2 id="Products">Product 1</h2>
+            <p>
+                My product list
+
+                @if (productTable != null && productTable.Rows.Count > 0)
+                {
+                    <table class="table table-striped table-bordered">
+                        <thead>
+                            <tr>
+                                @foreach (DataColumn col in productTable.Columns)
+                                {
+                                    <th>@col.ColumnName</th>
+                                }
+                                <th>Select</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < productTable.Rows.Count; i++)
+                            {
+                                int rowIndex = i;
+                                DataRow row = productTable.Rows[i];
+                                <tr class="@(selectedRowIndex == rowIndex ? "table-active" : "")">
+                                    @foreach (DataColumn col in productTable.Columns)
+                                    {
+                                        <td>@row[col]</td>
+                                    }
+                                    <td>
+                                        <button class="btn btn-sm btn-primary" @onclick="() => Unnamed3_SelectedIndexChanged(rowIndex)">Select</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p>No products available.</p>
+                }
+
+                <br />
+                <br />
+            </p>
+            <p>
+                <NavLink class="btn btn-default" href="">Learn more &raquo;</NavLink>
+            </p>
+        </section>
+    </div>
+</main>
+
+@code {
+    private DataTable? productTable;
+    private int selectedRowIndex = -1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await LoadProductsAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error occurred during OnInitializedAsync in Products page.");
+        }
+    }
+
+    private async Task LoadProductsAsync()
+    {
+        try
+        {
+            productTable = new DataTable();
+            Logger.LogInformation("Products page loaded successfully.");
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error occurred while loading products.");
+        }
+    }
+
+    private void Unnamed3_SelectedIndexChanged(int rowIndex)
+    {
+        try
+        {
+            selectedRowIndex = rowIndex;
+            Logger.LogInformation("Selected row index changed to {RowIndex}.", rowIndex);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error occurred in Unnamed3_SelectedIndexChanged.");
+        }
+    }
+}

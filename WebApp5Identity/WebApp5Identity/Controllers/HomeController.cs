@@ -1,22 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data.Entity;
-using System.Linq;
 using System.Security.Claims;
-using System.Security.Policy;
-using System.Web;
-using System.Web.Mvc;
+using Microsoft.AspNetCore.Mvc;
 
 namespace WebApp5Identity.Controllers
 {
     public class HomeController : Controller
     {
-        public ActionResult Index()
+        public IActionResult Index()
         {
             return View();
         }
 
-        public ActionResult About()
+        public IActionResult About()
         {
             var user = HttpContext.User as ClaimsPrincipal;
             if (!user.HasClaim(c => c.Type == ClaimTypes.DateOfBirth))
@@ -26,7 +21,8 @@ namespace WebApp5Identity.Controllers
             }
 
             int minAge = 16;
-            var dateOfBirth = Convert.ToDateTime(user.FindFirst(c => c.Type == ClaimTypes.DateOfBirth).Value);
+            var dateOfBirth = Convert.ToDateTime(
+                user.FindFirst(c => c.Type == ClaimTypes.DateOfBirth).Value);
 
             if (calculateAge(dateOfBirth) >= minAge)
             {
@@ -50,10 +46,9 @@ namespace WebApp5Identity.Controllers
             return calculatedAge;
         }
 
-        public ActionResult Contact()
+        public IActionResult Contact()
         {
             ViewBag.Message = "Your contact page.";
-
             return View();
         }
     }

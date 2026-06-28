@@ -1,10 +1,11 @@
-﻿@model WebAppMvcIdentity.Models.ExternalLoginListViewModel
-@using Microsoft.Owin.Security
+@model WebAppMvcIdentity.Models.ExternalLoginListViewModel
+@using Microsoft.AspNetCore.Authentication
+@inject Microsoft.AspNetCore.Identity.SignInManager<WebAppMvcIdentity.Models.ApplicationUser> SignInManager
 
 <h4>Use another service to log in.</h4>
 <hr />
 @{
-    var loginProviders = Context.GetOwinContext().Authentication.GetExternalAuthenticationTypes();
+    var loginProviders = (await SignInManager.GetExternalAuthenticationSchemesAsync()).ToList();
     if (loginProviders.Count() == 0) {
         <div>
             <p>
@@ -14,12 +15,12 @@
         </div>
     }
     else {
-        using (Html.BeginForm("ExternalLogin", "Account", new { ReturnUrl = Model.ReturnUrl }, FormMethod.Post, new { role = "form" })) {
+using (Html.BeginForm("ExternalLogin", "Account", new { ReturnUrl = Model.ReturnUrl }, FormMethod.Post, false, new { role = "form" })) {
             @Html.AntiForgeryToken()
             <div id="socialLoginList">
                 <p>
-                    @foreach (AuthenticationDescription p in loginProviders) {
-                        <button type="submit" class="btn btn-outline-dark" id="@p.AuthenticationType" name="provider" value="@p.AuthenticationType" title="Log in using your @p.Caption account">@p.AuthenticationType</button>
+                    @foreach (AuthenticationScheme p in loginProviders) {
+<button type="submit" class="btn btn-outline-dark" id="@p.Name" name="provider" value="@p.Name" title="Log in using your @p.DisplayName account">@p.Name</button>
                     }
                 </p>
             </div>

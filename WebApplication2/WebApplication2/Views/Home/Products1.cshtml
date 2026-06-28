@@ -1,7 +1,9 @@
-﻿@{
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment HostingEnvironment
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@{
     ViewBag.Title = "Products1";
-    var dataFile = Server.MapPath("~/App_Data/intro_tutorials.txt");
-    Array userData = File.ReadAllLines(dataFile);
+    var dataFile = System.IO.Path.Combine(HostingEnvironment.ContentRootPath, "App_Data", "intro_tutorials.txt");
+    Array userData = System.IO.File.ReadAllLines(dataFile);
 }
 <main aria-labelledby="title">
     <h2 id="title">@ViewBag.Title.</h2>
@@ -31,10 +33,10 @@
     <p>The greeting is: @greetingMessage</p>
 
     @{
-        if (IsPost)
+        if (HttpContextAccessor.HttpContext.Request.Method == "POST")
         {
-            string companyname = Request["CompanyName"];
-            string contactname = Request["ContactName"];
+            string companyname = HttpContextAccessor.HttpContext.Request.Form["CompanyName"];
+            string contactname = HttpContextAccessor.HttpContext.Request.Form["ContactName"];
             <p>
                 You entered: <br />
                 Company Name: @companyname <br />

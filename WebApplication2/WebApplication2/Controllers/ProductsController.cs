@@ -1,18 +1,24 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.Entity;
 using System.Linq;
 using System.Net;
-using System.Web;
-using System.Web.Mvc;
 using WebApplication2.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+
 
 namespace WebApplication2.Controllers
 {
     public class ProductsController : Controller
     {
-        private ProductDBCintext db = new ProductDBCintext();
+        private readonly ProductDBCintext db;
+
+        public ProductsController(ProductDBCintext context)
+        {
+            db = context;
+        }
 
         // GET: Products
         /*public ActionResult Index()
@@ -23,7 +29,7 @@ namespace WebApplication2.Controllers
         /*public ActionResult Index(string searchString)
         {
             var products = from m in db.Products select m;
-        
+
             if (!string.IsNullOrEmpty(searchString))
             {
                 products = products.Where(s => s.Name.Contains(searchString));
@@ -75,12 +81,12 @@ namespace WebApplication2.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             Product product = db.Products.Find(id);
             if (product == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(product);
         }
@@ -92,11 +98,11 @@ namespace WebApplication2.Controllers
         }
 
         // POST: Products/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
+        // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "ID,Name,ExpirationDate,QRCode,Price")] Product product)
+        public ActionResult Create([Bind("ID,Name,ExpirationDate,QRCode,Price")] Product product)
         {
             if (ModelState.IsValid)
             {
@@ -113,22 +119,22 @@ namespace WebApplication2.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             Product product = db.Products.Find(id);
             if (product == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(product);
         }
 
         // POST: Products/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
+        // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit([Bind(Include = "ID,Name,ExpirationDate,QRCode,Price")] Product product)
+        public ActionResult Edit([Bind("ID,Name,ExpirationDate,QRCode,Price")] Product product)
         {
             if (ModelState.IsValid)
             {
@@ -144,12 +150,12 @@ namespace WebApplication2.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             Product product = db.Products.Find(id);
             if (product == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(product);
         }
@@ -163,15 +169,6 @@ namespace WebApplication2.Controllers
             db.Products.Remove(product);
             db.SaveChanges();
             return RedirectToAction("Index");
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                db.Dispose();
-            }
-            base.Dispose(disposing);
         }
     }
 }

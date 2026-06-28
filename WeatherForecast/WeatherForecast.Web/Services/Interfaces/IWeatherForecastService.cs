@@ -1,4 +1,4 @@
-﻿using WeatherForecast.Web.Models;
+using WeatherForecast.Web.Api.Models;
 
 namespace WeatherForecast.Web.Services.Interfaces
 {

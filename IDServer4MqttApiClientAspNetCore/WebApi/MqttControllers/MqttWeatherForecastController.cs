@@ -1,14 +1,13 @@
-﻿using Microsoft.Extensions.Logging;
-using MQTTnet.AspNetCore.AttributeRouting;
+using Microsoft.Extensions.Logging;
 using MQTTnet;
+using MQTTnet.Protocol;
+using MQTTnet.Server;
 using System;
 using System.Threading.Tasks;
 
 namespace WebApi.MqttControllers
 {
-    [MqttController]
-    [MqttRoute("[controller]")]
-    public class MqttWeatherForecastController : MqttBaseController
+    public class MqttWeatherForecastController
     {
         private readonly ILogger<MqttWeatherForecastController> _logger;
 
@@ -18,25 +17,29 @@ namespace WebApi.MqttControllers
             _logger = logger;
         }
 
-        // Supports template routing with typed constraints
-        [MqttRoute("{zipCode:int}/temperature")]
-        public Task WeatherReport(int zipCode)
+        // Handles weather report messages for a given zip code on topic "{zipCode}/temperature"
+        public Task WeatherReport(MqttApplicationMessageInterceptorContext context, int zipCode)
         {
             // We have access to the MqttContext
-            if (zipCode != 90210) { MqttContext.CloseConnection = true; }
+            if (zipCode != 90210)
+            {
+                context.AcceptPublish = false;
+                return Task.CompletedTask;
+            }
 
             // We have access to the raw message
-            var temperature = BitConverter.ToDouble(Message.Payload);
+            var temperature = BitConverter.ToDouble(context.ApplicationMessage.Payload.ToArray());
 
             _logger.LogInformation($"It's {temperature} degrees in Hollywood");
 
             // Example validation
             if (temperature <= 0 || temperature >= 130)
             {
-                return BadMessage();
+                context.AcceptPublish = false;
+                return Task.CompletedTask;
             }
 
-            return Ok();
+            return Task.CompletedTask;
         }
     }
 }

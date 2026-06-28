@@ -1,5 +1,5 @@
-﻿using WeatherForecast.Web.Models;
-using WeatherForecast.Web.Helpers;
+using System.Text.Json;
+using WeatherForecast.Web.Api.Models;
 using WeatherForecast.Web.Services.Interfaces;
 
 namespace WeatherForecast.Web.Services
@@ -18,7 +18,9 @@ namespace WeatherForecast.Web.Services
         {
             var response = await _client.GetAsync(BasePath);
 
-            return await response.ReadContentAsync<List<WeatherForecastModel>>();
+            response.EnsureSuccessStatusCode();
+            var content = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<List<WeatherForecastModel>>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
         }
     }
 }

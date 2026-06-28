@@ -1,14 +1,10 @@
-﻿using Microsoft.Ajax.Utilities;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq;
-using System.Web;
-using System.Web.Mvc;
-
 using WebApplication5DemoDTjs.Models;
-using System.Linq.Dynamic;
 using System.Data.Entity;
-using static System.Net.Mime.MediaTypeNames;
+using Microsoft.AspNetCore.Mvc;
+using System.Linq.Dynamic.Core;
+
 
 namespace WebApplication5DemoDTjs.Controllers
 {
@@ -27,12 +23,13 @@ namespace WebApplication5DemoDTjs.Controllers
                 //Creating instance of DatabaseContext class  
                 using (CustomersDBContext _context = new CustomersDBContext("Name=test (webApplication5DemoDTjs)"))
                 {
-                    var draw = Request.Form.GetValues("draw").FirstOrDefault();
-                    var start = Request.Form.GetValues("start").FirstOrDefault();
-                    var length = Request.Form.GetValues("length").FirstOrDefault();
-                    var sortColumn = Request.Form.GetValues("columns[" + Request.Form.GetValues("order[0][column]").FirstOrDefault() + "][name]").FirstOrDefault();
-                    var sortColumnDir = Request.Form.GetValues("order[0][dir]").FirstOrDefault();
-                    var searchValue = Request.Form.GetValues("search[value]").FirstOrDefault();
+                    var draw = Request.Form["draw"].FirstOrDefault();
+                    var start = Request.Form["start"].FirstOrDefault();
+                    var length = Request.Form["length"].FirstOrDefault();
+                    var orderColIndex = Request.Form["order[0][column]"].FirstOrDefault();
+                    var sortColumn = Request.Form["columns[" + orderColIndex + "][name]"].FirstOrDefault();
+                    var sortColumnDir = Request.Form["order[0][dir]"].FirstOrDefault();
+                    var searchValue = Request.Form["search[value]"].FirstOrDefault();
 
 
                     //Paging Size (10,20,50,100)    
@@ -97,11 +94,11 @@ namespace WebApplication5DemoDTjs.Controllers
             {
                 var customer = _context.Customerss.Find(ID);
                 if (ID == null)
-                    return Json(data: "Not Deleted", behavior: JsonRequestBehavior.AllowGet);
+                    return Json("Not Deleted");
                 _context.Customerss.Remove(customer);
                 _context.SaveChanges();
 
-                return Json(data: "Deleted", behavior: JsonRequestBehavior.AllowGet);
+                return Json("Deleted");
             }
         }
     }

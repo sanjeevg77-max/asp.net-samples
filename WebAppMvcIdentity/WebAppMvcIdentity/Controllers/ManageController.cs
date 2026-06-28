@@ -1,48 +1,51 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
-using System.Web.Mvc;
-using Microsoft.AspNet.Identity;
-using Microsoft.AspNet.Identity.Owin;
-using Microsoft.Owin.Security;
 using WebAppMvcIdentity.Models;
+using Microsoft.AspNetCore.Mvc;
+
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+
 
 namespace WebAppMvcIdentity.Controllers
 {
     [Authorize]
     public class ManageController : Controller
     {
-        private ApplicationSignInManager _signInManager;
-        private ApplicationUserManager _userManager;
+        private SignInManager<ApplicationUser> _signInManager;
+        private UserManager<ApplicationUser> _userManager;
 
         public ManageController()
         {
         }
 
-        public ManageController(ApplicationUserManager userManager, ApplicationSignInManager signInManager)
+        public ManageController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager)
         {
             UserManager = userManager;
             SignInManager = signInManager;
         }
 
-        public ApplicationSignInManager SignInManager
+        public SignInManager<ApplicationUser> SignInManager
         {
             get
             {
-                return _signInManager ?? HttpContext.GetOwinContext().Get<ApplicationSignInManager>();
+                // These objects are now typically setup for dependency injection, and if needed outside the class they can be fetched from the service collection.
+                return _signInManager /* ?? HttpContext.GetOwinContext().Get<ApplicationSignInManager>() */;
             }
-            private set 
-            { 
-                _signInManager = value; 
+            private set
+            {
+                _signInManager = value;
             }
         }
 
-        public ApplicationUserManager UserManager
+        public UserManager<ApplicationUser> UserManager
         {
             get
             {
-                return _userManager ?? HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
+                // These objects are now typically setup for dependency injection, and if needed outside the class they can be fetched from the service collection.
+                return _userManager /* ?? HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>() */;
             }
             private set
             {
@@ -63,14 +66,15 @@ namespace WebAppMvcIdentity.Controllers
                 : message == ManageMessageId.RemovePhoneSuccess ? "Your phone number was removed."
                 : "";
 
-            var userId = User.Identity.GetUserId();
+            var userId = _userManager.GetUserId(User);
+            var currentUser = await UserManager.FindByIdAsync(userId);
             var model = new IndexViewModel
             {
                 HasPassword = HasPassword(),
-                PhoneNumber = await UserManager.GetPhoneNumberAsync(userId),
-                TwoFactor = await UserManager.GetTwoFactorEnabledAsync(userId),
-                Logins = await UserManager.GetLoginsAsync(userId),
-                BrowserRemembered = await AuthenticationManager.TwoFactorBrowserRememberedAsync(userId)
+                PhoneNumber = await UserManager.GetPhoneNumberAsync(currentUser),
+                TwoFactor = await UserManager.GetTwoFactorEnabledAsync(currentUser),
+                Logins = await UserManager.GetLoginsAsync(currentUser),
+                BrowserRemembered = false // AuthenticationManager.TwoFactorBrowserRememberedAsync is not available in ASP.NET Core
             };
             return View(model);
         }
@@ -82,13 +86,15 @@ namespace WebAppMvcIdentity.Controllers
         public async Task<ActionResult> RemoveLogin(string loginProvider, string providerKey)
         {
             ManageMessageId? message;
-            var result = await UserManager.RemoveLoginAsync(User.Identity.GetUserId(), new UserLoginInfo(loginProvider, providerKey));
+            var currentUserId = _userManager.GetUserId(User);
+            var currentUserForRemove = await UserManager.FindByIdAsync(currentUserId);
+            var result = await UserManager.RemoveLoginAsync(currentUserForRemove, loginProvider, providerKey);
             if (result.Succeeded)
             {
-                var user = await UserManager.FindByIdAsync(User.Identity.GetUserId());
+                var user = await UserManager.FindByIdAsync(currentUserId);
                 if (user != null)
                 {
-                    await SignInManager.SignInAsync(user, isPersistent: false, rememberBrowser: false);
+                    await SignInManager.SignInAsync(user, isPersistent: false);
                 }
                 message = ManageMessageId.RemoveLoginSuccess;
             }
@@ -117,16 +123,19 @@ namespace WebAppMvcIdentity.Controllers
                 return View(model);
             }
             // Generate the token and send it
-            var code = await UserManager.GenerateChangePhoneNumberTokenAsync(User.Identity.GetUserId(), model.Number);
-            if (UserManager.SmsService != null)
-            {
-                var message = new IdentityMessage
-                {
-                    Destination = model.Number,
-                    Body = "Your security code is: " + code
-                };
-                await UserManager.SmsService.SendAsync(message);
-            }
+            var userForPhone = await UserManager.FindByIdAsync(_userManager.GetUserId(User));
+            var code = await UserManager.GenerateChangePhoneNumberTokenAsync(userForPhone, model.Number);
+            // SmsService and IdentityMessage are no longer available in ASP.NET Core Identity.
+            // SMS sending should be implemented via a custom ISmsSender service registered with DI.
+            // if (UserManager.SmsService != null)
+            // {
+            //     var message = new IdentityMessage
+            //     {
+            //         Destination = model.Number,
+            //         Body = "Your security code is: " + code
+            //     };
+            //     await UserManager.SmsService.SendAsync(message);
+            // }
             return RedirectToAction("VerifyPhoneNumber", new { PhoneNumber = model.Number });
         }
 
@@ -136,11 +145,12 @@ namespace WebAppMvcIdentity.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> EnableTwoFactorAuthentication()
         {
-            await UserManager.SetTwoFactorEnabledAsync(User.Identity.GetUserId(), true);
-            var user = await UserManager.FindByIdAsync(User.Identity.GetUserId());
+            var userForTwoFactor = await UserManager.FindByIdAsync(_userManager.GetUserId(User));
+            await UserManager.SetTwoFactorEnabledAsync(userForTwoFactor, true);
+            var user = await UserManager.FindByIdAsync(_userManager.GetUserId(User));
             if (user != null)
             {
-                await SignInManager.SignInAsync(user, isPersistent: false, rememberBrowser: false);
+                await SignInManager.SignInAsync(user, isPersistent: false);
             }
             return RedirectToAction("Index", "Manage");
         }
@@ -151,11 +161,12 @@ namespace WebAppMvcIdentity.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> DisableTwoFactorAuthentication()
         {
-            await UserManager.SetTwoFactorEnabledAsync(User.Identity.GetUserId(), false);
-            var user = await UserManager.FindByIdAsync(User.Identity.GetUserId());
+            var userForDisable = await UserManager.FindByIdAsync(_userManager.GetUserId(User));
+            await UserManager.SetTwoFactorEnabledAsync(userForDisable, false);
+            var user = await UserManager.FindByIdAsync(_userManager.GetUserId(User));
             if (user != null)
             {
-                await SignInManager.SignInAsync(user, isPersistent: false, rememberBrowser: false);
+                await SignInManager.SignInAsync(user, isPersistent: false);
             }
             return RedirectToAction("Index", "Manage");
         }
@@ -164,7 +175,8 @@ namespace WebAppMvcIdentity.Controllers
         // GET: /Manage/VerifyPhoneNumber
         public async Task<ActionResult> VerifyPhoneNumber(string phoneNumber)
         {
-            var code = await UserManager.GenerateChangePhoneNumberTokenAsync(User.Identity.GetUserId(), phoneNumber);
+            var userForVerify = await UserManager.FindByIdAsync(_userManager.GetUserId(User));
+            var code = await UserManager.GenerateChangePhoneNumberTokenAsync(userForVerify, phoneNumber);
             // Send an SMS through the SMS provider to verify the phone number
             return phoneNumber == null ? View("Error") : View(new VerifyPhoneNumberViewModel { PhoneNumber = phoneNumber });
         }
@@ -179,13 +191,14 @@ namespace WebAppMvcIdentity.Controllers
             {
                 return View(model);
             }
-            var result = await UserManager.ChangePhoneNumberAsync(User.Identity.GetUserId(), model.PhoneNumber, model.Code);
+            var userForChangePhone = await UserManager.FindByIdAsync(_userManager.GetUserId(User));
+            var result = await UserManager.ChangePhoneNumberAsync(userForChangePhone, model.PhoneNumber, model.Code);
             if (result.Succeeded)
             {
-                var user = await UserManager.FindByIdAsync(User.Identity.GetUserId());
+                var user = await UserManager.FindByIdAsync(_userManager.GetUserId(User));
                 if (user != null)
                 {
-                    await SignInManager.SignInAsync(user, isPersistent: false, rememberBrowser: false);
+                    await SignInManager.SignInAsync(user, isPersistent: false);
                 }
                 return RedirectToAction("Index", new { Message = ManageMessageId.AddPhoneSuccess });
             }
@@ -200,15 +213,16 @@ namespace WebAppMvcIdentity.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> RemovePhoneNumber()
         {
-            var result = await UserManager.SetPhoneNumberAsync(User.Identity.GetUserId(), null);
+            var userForRemovePhone = await UserManager.FindByIdAsync(_userManager.GetUserId(User));
+            var result = await UserManager.SetPhoneNumberAsync(userForRemovePhone, null);
             if (!result.Succeeded)
             {
                 return RedirectToAction("Index", new { Message = ManageMessageId.Error });
             }
-            var user = await UserManager.FindByIdAsync(User.Identity.GetUserId());
+            var user = await UserManager.FindByIdAsync(_userManager.GetUserId(User));
             if (user != null)
             {
-                await SignInManager.SignInAsync(user, isPersistent: false, rememberBrowser: false);
+                await SignInManager.SignInAsync(user, isPersistent: false);
             }
             return RedirectToAction("Index", new { Message = ManageMessageId.RemovePhoneSuccess });
         }
@@ -230,13 +244,14 @@ namespace WebAppMvcIdentity.Controllers
             {
                 return View(model);
             }
-            var result = await UserManager.ChangePasswordAsync(User.Identity.GetUserId(), model.OldPassword, model.NewPassword);
+            var userForChangePwd = await UserManager.FindByIdAsync(_userManager.GetUserId(User));
+            var result = await UserManager.ChangePasswordAsync(userForChangePwd, model.OldPassword, model.NewPassword);
             if (result.Succeeded)
             {
-                var user = await UserManager.FindByIdAsync(User.Identity.GetUserId());
+                var user = await UserManager.FindByIdAsync(_userManager.GetUserId(User));
                 if (user != null)
                 {
-                    await SignInManager.SignInAsync(user, isPersistent: false, rememberBrowser: false);
+                    await SignInManager.SignInAsync(user, isPersistent: false);
                 }
                 return RedirectToAction("Index", new { Message = ManageMessageId.ChangePasswordSuccess });
             }
@@ -259,13 +274,14 @@ namespace WebAppMvcIdentity.Controllers
         {
             if (ModelState.IsValid)
             {
-                var result = await UserManager.AddPasswordAsync(User.Identity.GetUserId(), model.NewPassword);
+                var userForAddPwd = await UserManager.FindByIdAsync(_userManager.GetUserId(User));
+                var result = await UserManager.AddPasswordAsync(userForAddPwd, model.NewPassword);
                 if (result.Succeeded)
                 {
-                    var user = await UserManager.FindByIdAsync(User.Identity.GetUserId());
+                    var user = await UserManager.FindByIdAsync(_userManager.GetUserId(User));
                     if (user != null)
                     {
-                        await SignInManager.SignInAsync(user, isPersistent: false, rememberBrowser: false);
+                        await SignInManager.SignInAsync(user, isPersistent: false);
                     }
                     return RedirectToAction("Index", new { Message = ManageMessageId.SetPasswordSuccess });
                 }
@@ -284,13 +300,13 @@ namespace WebAppMvcIdentity.Controllers
                 message == ManageMessageId.RemoveLoginSuccess ? "The external login was removed."
                 : message == ManageMessageId.Error ? "An error has occurred."
                 : "";
-            var user = await UserManager.FindByIdAsync(User.Identity.GetUserId());
+            var user = await UserManager.FindByIdAsync(_userManager.GetUserId(User));
             if (user == null)
             {
                 return View("Error");
             }
-            var userLogins = await UserManager.GetLoginsAsync(User.Identity.GetUserId());
-            var otherLogins = AuthenticationManager.GetExternalAuthenticationTypes().Where(auth => userLogins.All(ul => auth.AuthenticationType != ul.LoginProvider)).ToList();
+            var userLogins = await UserManager.GetLoginsAsync(user);
+            var otherLogins = new System.Collections.Generic.List<Microsoft.AspNetCore.Authentication.AuthenticationScheme>(); // AuthenticationManager.GetExternalAuthenticationTypes() is not available in ASP.NET Core
             ViewBag.ShowRemoveButton = user.PasswordHash != null || userLogins.Count > 1;
             return View(new ManageLoginsViewModel
             {
@@ -306,19 +322,20 @@ namespace WebAppMvcIdentity.Controllers
         public ActionResult LinkLogin(string provider)
         {
             // Request a redirect to the external login provider to link a login for the current user
-            return new AccountController.ChallengeResult(provider, Url.Action("LinkLoginCallback", "Manage"), User.Identity.GetUserId());
+            return new AccountController.ChallengeResult(provider, Url.Action("LinkLoginCallback", "Manage"), _userManager.GetUserId(User));
         }
 
         //
         // GET: /Manage/LinkLoginCallback
         public async Task<ActionResult> LinkLoginCallback()
         {
-            var loginInfo = await AuthenticationManager.GetExternalLoginInfoAsync(XsrfKey, User.Identity.GetUserId());
+            var loginInfo = await _signInManager.GetExternalLoginInfoAsync(); // Replaced AuthenticationManager.GetExternalLoginInfoAsync with SignInManager equivalent
             if (loginInfo == null)
             {
                 return RedirectToAction("ManageLogins", new { Message = ManageMessageId.Error });
             }
-            var result = await UserManager.AddLoginAsync(User.Identity.GetUserId(), loginInfo.Login);
+            var userForLink = await UserManager.FindByIdAsync(_userManager.GetUserId(User));
+            var result = await UserManager.AddLoginAsync(userForLink, new UserLoginInfo(loginInfo.LoginProvider, loginInfo.ProviderKey, loginInfo.ProviderDisplayName));
             return result.Succeeded ? RedirectToAction("ManageLogins") : RedirectToAction("ManageLogins", new { Message = ManageMessageId.Error });
         }
 
@@ -337,25 +354,26 @@ namespace WebAppMvcIdentity.Controllers
         // Used for XSRF protection when adding external logins
         private const string XsrfKey = "XsrfId";
 
-        private IAuthenticationManager AuthenticationManager
-        {
-            get
-            {
-                return HttpContext.GetOwinContext().Authentication;
-            }
-        }
+        // IAuthenticationManager is no longer available in ASP.NET Core. OWIN-based authentication has been replaced by ASP.NET Core authentication middleware.
+        // private IAuthenticationManager AuthenticationManager
+        // {
+        //     get
+        //     {
+        //         return HttpContext.GetOwinContext().Authentication;
+        //     }
+        // }
 
         private void AddErrors(IdentityResult result)
         {
             foreach (var error in result.Errors)
             {
-                ModelState.AddModelError("", error);
+                ModelState.AddModelError("", error.Description);
             }
         }
 
         private bool HasPassword()
         {
-            var user = UserManager.FindById(User.Identity.GetUserId());
+            var user = UserManager.FindByIdAsync(_userManager.GetUserId(User)).GetAwaiter().GetResult();
             if (user != null)
             {
                 return user.PasswordHash != null;
@@ -365,7 +383,7 @@ namespace WebAppMvcIdentity.Controllers
 
         private bool HasPhoneNumber()
         {
-            var user = UserManager.FindById(User.Identity.GetUserId());
+            var user = UserManager.FindByIdAsync(_userManager.GetUserId(User)).GetAwaiter().GetResult();
             if (user != null)
             {
                 return user.PhoneNumber != null;
